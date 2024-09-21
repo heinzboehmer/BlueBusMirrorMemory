@@ -1,3 +1,16 @@
+# **_NOTE:_**
+This fork adds memory seat/mirror functionality to the BlueBus when used in an E46 with the CD53 radio. 
+
+This overloads the functionality of button `5` on the CD53. Repeatedly pressing will cycle through the following modes:
+
+1. Recall Mirror Memory
+2. Save Mirror Memory
+3. Device selection mode
+
+When in modes (1) or (2), use buttons `1`, `2` or `3` to recall/save memory 1, 2 or 3. Mode (3) works like stock.
+
+# 
+
 View this project on [CADLAB.io](https://cadlab.io/project/1479). 
 
 # BlueBus

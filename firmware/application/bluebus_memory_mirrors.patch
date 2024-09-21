@@ -1,0 +1,201 @@
+diff --git a/firmware/application/ui/cd53.c b/firmware/application/ui/cd53.c
+index 6c68329..dddd81c 100644
+--- a/firmware/application/ui/cd53.c
++++ b/firmware/application/ui/cd53.c
+@@ -278,12 +278,40 @@ static void CD53HandleUIButtons(CD53Context_t *context, unsigned char *pkt)
+                 CD53SetTempDisplayText(context, "No Device", 4);
+                 CD53SetMainDisplayText(context, "Bluetooth", 0);
+             }
++        } else if (context->mode == CD53_MODE_MEMORY_MIRROR_RECALL) {
++            const uint8_t recallMem1[] = {0x78, 0x01, 0x00};
++            IBusSendCommand(
++                context->ibus,
++                IBUS_DEVICE_SM0,
++                IBUS_DEVICE_GLO,
++                recallMem1,
++                sizeof(recallMem1)
++            );
++            CD53SetTempDisplayText(context, "Mem 1", 2);
++            context->mode = CD53_MODE_ACTIVE;
++            CD53SetMainDisplayText(context, "Bluetooth", 0);
++            if (context->displayMetadata != CD53_DISPLAY_METADATA_OFF) {
++                CD53BTMetadata(context, 0x00);
++            }
++        } else if (context->mode == CD53_MODE_MEMORY_MIRROR_SAVE) {
++            const uint8_t saveMem1[] = {0x78, 0x09, 0x00};
++            IBusSendCommand(
++                context->ibus,
++                IBUS_DEVICE_SM0,
++                IBUS_DEVICE_GLO,
++                saveMem1,
++                sizeof(saveMem1)
++            );
++            CD53SetTempDisplayText(context, "Mem 1 Saved", 2);
++            context->mode = CD53_MODE_ACTIVE;
++            CD53SetMainDisplayText(context, "Bluetooth", 0);
++            if (context->displayMetadata != CD53_DISPLAY_METADATA_OFF) {
++                CD53BTMetadata(context, 0x00);
++            }
+         } else {
+             CD53RedisplayText(context);
+         }
+-    } else if (pkt[IBUS_PKT_DB1] == IBUS_CDC_CMD_CD_CHANGE &&
+-               pkt[IBUS_PKT_DB2] == 0x02
+-    ) {
++    } else if (pkt[IBUS_PKT_DB1] == IBUS_CDC_CMD_CD_CHANGE &&  pkt[IBUS_PKT_DB2] == 0x02) {
+         if (context->mode == CD53_MODE_ACTIVE) {
+             // Toggle Metadata scrolling
+             if (context->displayMetadata == CD53_DISPLAY_METADATA_ON) {
+@@ -314,25 +342,87 @@ static void CD53HandleUIButtons(CD53Context_t *context, unsigned char *pkt)
+                 CD53SetTempDisplayText(context, "Connected", 2);
+             }
+             CD53RedisplayText(context);
+-        }
+-    } else if (pkt[IBUS_PKT_DB1] == IBUS_CDC_CMD_CD_CHANGE && pkt[3] == 0x03) {
+-        if (ConfigGetSetting(CONFIG_SETTING_HFP) == CONFIG_SETTING_ON) {
+-            uint32_t now = TimerGetMillis();
+-            if (context->bt->callStatus == BT_CALL_ACTIVE) {
+-                BTCommandCallEnd(context->bt);
+-            } else if (context->bt->callStatus == BT_CALL_INCOMING) {
+-                BTCommandCallAccept(context->bt);
+-            } else if (context->bt->callStatus == BT_CALL_OUTGOING) {
+-                BTCommandCallEnd(context->bt);
++        } else if (context->mode == CD53_MODE_MEMORY_MIRROR_RECALL) {
++            const uint8_t recallMem2[] = {0x78, 0x02, 0x00};
++            IBusSendCommand(
++                context->ibus,
++                IBUS_DEVICE_SM0,
++                IBUS_DEVICE_GLO,
++                recallMem2,
++                sizeof(recallMem2)
++            );
++            CD53SetTempDisplayText(context, "Mem 2", 2);
++            context->mode = CD53_MODE_ACTIVE;
++            CD53SetMainDisplayText(context, "Bluetooth", 0);
++            if (context->displayMetadata != CD53_DISPLAY_METADATA_OFF) {
++                CD53BTMetadata(context, 0x00);
++            }
++        } else if (context->mode == CD53_MODE_MEMORY_MIRROR_SAVE) {
++            const uint8_t saveMem2[] = {0x78, 0x0A, 0x00};
++            IBusSendCommand(
++                context->ibus,
++                IBUS_DEVICE_SM0,
++                IBUS_DEVICE_GLO,
++                saveMem2,
++                sizeof(saveMem2)
++            );
++            CD53SetTempDisplayText(context, "Mem 2 Saved", 2);
++            context->mode = CD53_MODE_ACTIVE;
++            CD53SetMainDisplayText(context, "Bluetooth", 0);
++            if (context->displayMetadata != CD53_DISPLAY_METADATA_OFF) {
++                CD53BTMetadata(context, 0x00);
++            }
++        }
++    } else if (pkt[IBUS_PKT_DB1] == IBUS_CDC_CMD_CD_CHANGE &&  pkt[IBUS_PKT_DB2] == 0x03) {
++        if (context->mode == CD53_MODE_MEMORY_MIRROR_RECALL) {
++            const uint8_t recallMem3[] = {0x78, 0x04, 0x00};
++            IBusSendCommand(
++                context->ibus,
++                IBUS_DEVICE_SM0,
++                IBUS_DEVICE_GLO,
++                recallMem3,
++                sizeof(recallMem3)
++            );
++            CD53SetTempDisplayText(context, "Mem 3", 2);
++            context->mode = CD53_MODE_ACTIVE;
++            CD53SetMainDisplayText(context, "Bluetooth", 0);
++            if (context->displayMetadata != CD53_DISPLAY_METADATA_OFF) {
++                CD53BTMetadata(context, 0x00);
++            }
++        } else if (context->mode == CD53_MODE_MEMORY_MIRROR_SAVE) {
++            const uint8_t saveMem3[] = {0x78, 0x0C, 0x00};
++            IBusSendCommand(
++                context->ibus,
++                IBUS_DEVICE_SM0,
++                IBUS_DEVICE_GLO,
++                saveMem3,
++                sizeof(saveMem3)
++            );
++            CD53SetTempDisplayText(context, "Mem 3 Saved", 2);
++            context->mode = CD53_MODE_ACTIVE;
++            CD53SetMainDisplayText(context, "Bluetooth", 0);
++            if (context->displayMetadata != CD53_DISPLAY_METADATA_OFF) {
++                CD53BTMetadata(context, 0x00);
+             }
+-            if ((now - context->lastTelephoneButtonPress) <= CD53_VR_TOGGLE_TIME &&
+-                context->bt->callStatus == BT_CALL_INACTIVE
+-            ) {
+-                BTCommandToggleVoiceRecognition(context->bt);
++        } else {
++            if (ConfigGetSetting(CONFIG_SETTING_HFP) == CONFIG_SETTING_ON) {
++                uint32_t now = TimerGetMillis();
++                if (context->bt->callStatus == BT_CALL_ACTIVE) {
++                    BTCommandCallEnd(context->bt);
++                } else if (context->bt->callStatus == BT_CALL_INCOMING) {
++                    BTCommandCallAccept(context->bt);
++                } else if (context->bt->callStatus == BT_CALL_OUTGOING) {
++                    BTCommandCallEnd(context->bt);
++                }
++                if ((now - context->lastTelephoneButtonPress) <= CD53_VR_TOGGLE_TIME &&
++                    context->bt->callStatus == BT_CALL_INACTIVE
++                ) {
++                    BTCommandToggleVoiceRecognition(context->bt);
++                }
+             }
++            context->lastTelephoneButtonPress = TimerGetMillis();
++            CD53RedisplayText(context);
+         }
+-        context->lastTelephoneButtonPress = TimerGetMillis();
+-        CD53RedisplayText(context);
+     } else if (pkt[IBUS_PKT_DB1] == IBUS_CDC_CMD_CD_CHANGE &&  pkt[IBUS_PKT_DB2] == 0x04) {
+         // Do nothing if the display is off
+         if (context->mode == CD53_MODE_ACTIVE_DISPLAY_OFF) {
+@@ -354,16 +444,26 @@ static void CD53HandleUIButtons(CD53Context_t *context, unsigned char *pkt)
+         if (context->mode == CD53_MODE_ACTIVE_DISPLAY_OFF) {
+             return;
+         }
+-        // Device selection mode
+-        if (context->mode != CD53_MODE_DEVICE_SEL) {
+-            if (context->bt->pairedDevicesCount == 0) {
+-                CD53SetTempDisplayText(context, "No Devices", 4);
+-            } else {
+-                CD53SetTempDisplayText(context, "Devices", 2);
+-                context->btDeviceIndex = CD53_PAIRING_DEVICE_NONE;
+-                CD53ShowNextAvailableDevice(context, 0);
++        if (context->mode == CD53_MODE_ACTIVE) {
++            // Recall Mirror Memory
++            context->mode = CD53_MODE_MEMORY_MIRROR_RECALL;
++            CD53SetMainDisplayText(context, "Recall Mirror Memory", 0);
++        } else if (context->mode == CD53_MODE_MEMORY_MIRROR_RECALL) {
++            // Save Mirror Memory
++            context->mode = CD53_MODE_MEMORY_MIRROR_SAVE;
++            CD53SetMainDisplayText(context, "Save Mirror Memory", 0);
++        } else if (context->mode == CD53_MODE_MEMORY_MIRROR_SAVE) {
++            // Device selection mode
++            if (context->mode != CD53_MODE_DEVICE_SEL) {
++                if (context->bt->pairedDevicesCount == 0) {
++                    CD53SetTempDisplayText(context, "No Devices", 4);
++                } else {
++                    CD53SetTempDisplayText(context, "Devices", 2);
++                    context->btDeviceIndex = CD53_PAIRING_DEVICE_NONE;
++                    CD53ShowNextAvailableDevice(context, 0);
++                }
++                context->mode = CD53_MODE_DEVICE_SEL;
+             }
+-            context->mode = CD53_MODE_DEVICE_SEL;
+         } else {
+             context->mode = CD53_MODE_ACTIVE;
+             CD53SetMainDisplayText(context, "Bluetooth", 0);
+diff --git a/firmware/application/ui/cd53.h b/firmware/application/ui/cd53.h
+index 2372ea9..b0efbec 100644
+--- a/firmware/application/ui/cd53.h
++++ b/firmware/application/ui/cd53.h
+@@ -33,6 +33,8 @@
+ #define CD53_MODE_CALL 3
+ #define CD53_MODE_DEVICE_SEL 4
+ #define CD53_MODE_SETTINGS 5
++#define CD53_MODE_MEMORY_MIRROR_RECALL 6
++#define CD53_MODE_MEMORY_MIRROR_SAVE 7
+ #define CD53_PAIRING_DEVICE_NONE -1
+ #define CD53_SEEK_MODE_NONE 0
+ #define CD53_SEEK_MODE_FWD 1
