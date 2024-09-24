@@ -1006,6 +1006,15 @@ void IBusSendCommand(
     } else {
         ibus->txBufferWriteIdx++;
     }
+
+    if (ibus->txBufferWriteIdx == ibus->txBufferReadIdx) {
+        long long unsigned int ts = (long long unsigned int) TimerGetMillis();
+        LogRawDebug(
+            LOG_SOURCE_IBUS,
+            "[%llu] ERROR: IBus: TX Buffer Overflow.\r\n",
+            ts
+        );
+    }
 }
 
 /***
