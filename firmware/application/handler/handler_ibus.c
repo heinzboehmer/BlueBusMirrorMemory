@@ -12,6 +12,7 @@
 #include "../lib/bt/bt_bc127.h"
 #include "../lib/bt.h"
 #include "../lib/config.h"
+#include "../lib/ibus.h"
 #include "../lib/event.h"
 #include "../lib/log.h"
 #include "../lib/timer.h"
@@ -1930,6 +1931,24 @@ void HandlerIBusSensorValueUpdate(void *ctx, uint8_t *type)
         ) {
             HandlerSetVolume(context, HANDLER_VOLUME_DIRECTION_UP);
         }
+        if (context->ibus->gearPosition == IBUS_IKE_GEAR_REVERSE &&
+            ConfigGetSetting(CONFIG_SETTING_COMFORT_MIRRORS) != CONFIG_SETTING_OFF &&
+            context->ibus->comfortMirrorsStatus == HANDLER_COMFORT_MIRRORS_UNSCHEDULED) {
+            // Comfort mirror feature should only be scheduled _after_ the transmission
+            // has been put in reverse. Set flag to communicate this to future calls of
+            // this function.
+            context->ibus->comfortMirrorsStatus = HANDLER_COMFORT_MIRRORS_WAITING;
+        }
+        if (context->ibus->gearPosition != IBUS_IKE_GEAR_REVERSE &&
+            ConfigGetSetting(CONFIG_SETTING_COMFORT_MIRRORS) != CONFIG_SETTING_OFF &&
+            context->ibus->comfortMirrorsStatus == HANDLER_COMFORT_MIRRORS_WAITING) {
+            TimerRegisterScheduledTask(
+                &HandlerComfortMirrors,
+                context,
+                HANDLER_INT_COMFORT_MIRRORS
+            );
+            context->ibus->comfortMirrorsStatus = HANDLER_COMFORT_MIRRORS_SCHEDULED;
+        }
     }
 }
 
@@ -2246,6 +2265,56 @@ void HandlerTimerIBusPDCDistance(void *ctx)
     } else {
         IBusCommandPDCGetSensorStatus(context->ibus);
         context->pdcInactivityTicks++;
+    }
+}
+
+/**
+ * HandlerComfortMirrors()
+ *     Description:
+ *         When coming out of reverse, set a timer and check if still out of reverse.
+ *         If so, issue "Recall Mem X" IBus command.
+ * 
+ *         This is a workaround for the bug in the E46's memory module that
+ *         causes the passenger mirror to end up too high after auto dipping
+ *         in reverse.
+ *     Params:
+ *         void *ctx - The context provided at registration
+ *     Returns:
+ *         void
+ */
+void HandlerComfortMirrors(void *ctx)
+{
+    HandlerContext_t *context = (HandlerContext_t *) ctx;
+    uint8_t comfortMirrorsSetting = ConfigGetSetting(CONFIG_SETTING_COMFORT_MIRRORS);
+
+    // Reset flag for next reverse cycle and unschedule task.
+    TimerUnregisterScheduledTask(&HandlerComfortMirrors);
+    context->ibus->comfortMirrorsStatus = HANDLER_COMFORT_MIRRORS_UNSCHEDULED;
+
+    if (context->ibus->gearPosition == IBUS_IKE_GEAR_REVERSE) {
+        // If back in reverse, don't try to move mirrors.
+        context->ibus->comfortMirrorsStatus = HANDLER_COMFORT_MIRRORS_WAITING;
+        return;
+    }
+
+    if (comfortMirrorsSetting == CONFIG_SETTING_OFF) {
+        // Unlikely, but it's possible the setting got turned off after the handler was
+        // scheduled. If so, ignore and return.
+        return;
+    }
+
+    switch (comfortMirrorsSetting) {
+        case CONFIG_SETTING_COMFORT_MIRRORS_MEM_1:
+            IBusCommandRecallMirrorMem1(context->ibus);
+            break;
+        case CONFIG_SETTING_COMFORT_MIRRORS_MEM_2:
+            IBusCommandRecallMirrorMem2(context->ibus);
+            break;
+        case CONFIG_SETTING_COMFORT_MIRRORS_MEM_3:
+            IBusCommandRecallMirrorMem3(context->ibus);
+            break;
+        default:
+            LogError("Unknown setting for Comfort Mirrors: 0x%X", comfortMirrorsSetting);
     }
 }
 
