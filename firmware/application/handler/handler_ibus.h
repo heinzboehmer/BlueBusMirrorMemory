@@ -45,5 +45,6 @@ void HandlerTimerIBusLCMIOStatus(void *);
 void HandlerTimerIBusIdent(void *);
 void HandlerTimerIBusLightingState(void *);
 void HandlerTimerIBusPDCDistance(void *);
+void HandlerComfortMirrors(void *);
 void HandlerTimerIBusPings(void *);
 #endif /* HANDLER_IBUS_H */

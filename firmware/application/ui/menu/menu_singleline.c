@@ -27,6 +27,7 @@ static uint8_t SETTINGS_MENU[] = {
     MENU_SINGLELINE_SETTING_IDX_HOME_LIGHTS,
     MENU_SINGLELINE_SETTING_IDX_COMFORT_LOCKS,
     MENU_SINGLELINE_SETTING_IDX_COMFORT_UNLOCK,
+    MENU_SINGLELINE_SETTING_IDX_COMFORT_MIRRORS,
     MENU_SINGLELINE_SETTING_IDX_VISUAL_PDC,
     MENU_SINGLELINE_SETTING_IDX_ABOUT,
     MENU_SINGLELINE_SETTING_IDX_PAIRINGS
@@ -47,6 +48,7 @@ static uint8_t SETTINGS_TO_CONFIG_MAP[] = {
     CONFIG_SETTING_COMFORT_HOME_LIGHTS,
     CONFIG_SETTING_COMFORT_LOCKS,
     CONFIG_SETTING_COMFORT_UNLOCK,
+    CONFIG_SETTING_COMFORT_MIRRORS,
     CONFIG_SETTING_VISUAL_PDC
 };
 
@@ -362,6 +364,14 @@ void MenuSingleLineSettingsEditSave(MenuSingleLineContext_t *context)
             );
         } else if (context->settingIdx == MENU_SINGLELINE_SETTING_IDX_COMFORT_UNLOCK) {
             ConfigSetComfortUnlock(context->settingValue);
+            MenuSingleLineSetDisplayText(
+                context,
+                "Saved",
+                1,
+                MENU_SINGLELINE_DISPLAY_UPDATE_TEMP
+            );
+        } else if (context->settingIdx == MENU_SINGLELINE_SETTING_IDX_COMFORT_MIRRORS) {
+            ConfigSetSetting(CONFIG_SETTING_COMFORT_MIRRORS, context->settingValue);
             MenuSingleLineSetDisplayText(
                 context,
                 "Saved",
@@ -827,6 +837,38 @@ void MenuSingleLineSettingsNextSetting(MenuSingleLineContext_t *context, uint8_t
             );
         }
     }
+    if (nextMenu == MENU_SINGLELINE_SETTING_IDX_COMFORT_MIRRORS) {
+        context->settingValue = ConfigGetSetting(CONFIG_SETTING_COMFORT_MIRRORS);
+        if (context->settingValue == CONFIG_SETTING_COMFORT_MIRRORS_MEM_1) {
+            MenuSingleLineSetDisplayText(
+                context,
+                "Comfort Mirrors: Mem 1",
+                0,
+                MENU_SINGLELINE_DISPLAY_UPDATE_MAIN
+            );
+        } else if (context->settingValue == CONFIG_SETTING_COMFORT_MIRRORS_MEM_2) {
+            MenuSingleLineSetDisplayText(
+                context,
+                "Comfort Mirrors: Mem 2",
+                0,
+                MENU_SINGLELINE_DISPLAY_UPDATE_MAIN
+            );
+        } else if (context->settingValue == CONFIG_SETTING_COMFORT_MIRRORS_MEM_3) {
+            MenuSingleLineSetDisplayText(
+                context,
+                "Comfort Mirrors: Mem 3",
+                0,
+                MENU_SINGLELINE_DISPLAY_UPDATE_MAIN
+            );
+        } else {
+            MenuSingleLineSetDisplayText(
+                context,
+                "Comfort Mirrors: Off",
+                0,
+                MENU_SINGLELINE_DISPLAY_UPDATE_MAIN
+            );
+        }
+    }
     if (nextMenu == MENU_SINGLELINE_SETTING_IDX_VISUAL_PDC) {
         context->settingValue = ConfigGetSetting(CONFIG_SETTING_VISUAL_PDC);
         if (context->settingValue == CONFIG_SETTING_PDC_CLUSTER) {
@@ -1239,6 +1281,41 @@ void MenuSingleLineSettingsNextValue(MenuSingleLineContext_t *context, uint8_t d
                 MENU_SINGLELINE_DISPLAY_UPDATE_MAIN
             );
             context->settingValue = CONFIG_SETTING_COMFORT_UNLOCK_POS_0;
+        } else {
+            MenuSingleLineSetDisplayText(
+                context,
+                "Off",
+                0,
+                MENU_SINGLELINE_DISPLAY_UPDATE_MAIN
+            );
+            context->settingValue = CONFIG_SETTING_OFF;
+        }
+    }
+    if (context->settingIdx == MENU_SINGLELINE_SETTING_IDX_COMFORT_MIRRORS) {
+        if (context->settingValue == CONFIG_SETTING_OFF) {
+            MenuSingleLineSetDisplayText(
+                context,
+                "Mem 1",
+                0,
+                MENU_SINGLELINE_DISPLAY_UPDATE_MAIN
+            );
+            context->settingValue = CONFIG_SETTING_COMFORT_MIRRORS_MEM_1;
+        } else if (context->settingValue == CONFIG_SETTING_COMFORT_MIRRORS_MEM_1) {
+            MenuSingleLineSetDisplayText(
+                context,
+                "Mem 2",
+                0,
+                MENU_SINGLELINE_DISPLAY_UPDATE_MAIN
+            );
+            context->settingValue = CONFIG_SETTING_COMFORT_MIRRORS_MEM_2;
+        } else if (context->settingValue == CONFIG_SETTING_COMFORT_MIRRORS_MEM_2) {
+            MenuSingleLineSetDisplayText(
+                context,
+                "Mem 3",
+                0,
+                MENU_SINGLELINE_DISPLAY_UPDATE_MAIN
+            );
+            context->settingValue = CONFIG_SETTING_COMFORT_MIRRORS_MEM_3;
         } else {
             MenuSingleLineSetDisplayText(
                 context,

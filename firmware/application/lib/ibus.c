@@ -4003,3 +4003,129 @@ void IBusCommandVMModeSet(IBus_t *ibus, uint8_t enable)
     };
     IBusSendCommand(ibus, IBUS_DEVICE_CDC, IBUS_DEVICE_VM, pkt, sizeof(pkt));
 }
+
+/**
+ * IBusCommandSetMirrorMem1()
+ *     Description:
+ *        Set mirror/seat memory 1.
+ *     Params:
+ *         IBus_t *ibus - The pointer to the IBus_t object
+ *     Returns:
+ *         void
+ */
+void IBusCommandSetMirrorMem1(IBus_t *ibus)
+{
+    const uint8_t setMem1Cmd[] = {0x78, 0x09, 0x00};
+    IBusSendCommand(
+        ibus,
+        IBUS_DEVICE_SM0,
+        IBUS_DEVICE_GLO,
+        setMem1Cmd,
+        sizeof(setMem1Cmd)
+    );
+}
+
+/**
+ * IBusCommandSetMirrorMem2()
+ *     Description:
+ *        Set mirror/seat memory 2.
+ *     Params:
+ *         IBus_t *ibus - The pointer to the IBus_t object
+ *     Returns:
+ *         void
+ */
+void IBusCommandSetMirrorMem2(IBus_t *ibus)
+{
+    const uint8_t setMem2Cmd[] = {0x78, 0x0A, 0x00};
+    IBusSendCommand(
+        ibus,
+        IBUS_DEVICE_SM0,
+        IBUS_DEVICE_GLO,
+        setMem2Cmd,
+        sizeof(setMem2Cmd)
+    );
+}
+
+/**
+ * IBusCommandSetMirrorMem3()
+ *     Description:
+ *        Set mirror/seat memory 3.
+ *     Params:
+ *         IBus_t *ibus - The pointer to the IBus_t object
+ *     Returns:
+ *         void
+ */
+void IBusCommandSetMirrorMem3(IBus_t *ibus)
+{
+    const uint8_t setMem3Cmd[] = {0x78, 0x0C, 0x00};
+    IBusSendCommand(
+        ibus,
+        IBUS_DEVICE_SM0,
+        IBUS_DEVICE_GLO,
+        setMem3Cmd,
+        sizeof(setMem3Cmd)
+    );
+}
+
+/**
+ * IBusCommandRecallMirrorMem1()
+ *     Description:
+ *        Recall mirror/seat memory 1.
+ *     Params:
+ *         IBus_t *ibus - The pointer to the IBus_t object
+ *     Returns:
+ *         void
+ */
+void IBusCommandRecallMirrorMem1(IBus_t *ibus)
+{
+    const uint8_t recallMem1Cmd[] = {0x78, 0x01, 0x00};
+    IBusSendCommand(
+        ibus,
+        IBUS_DEVICE_SM0,
+        IBUS_DEVICE_GLO,
+        recallMem1Cmd,
+        sizeof(recallMem1Cmd)
+    );
+}
+
+/**
+ * IBusCommandRecallMirrorMem2()
+ *     Description:
+ *        Recall mirror/seat memory 2.
+ *     Params:
+ *         IBus_t *ibus - The pointer to the IBus_t object
+ *     Returns:
+ *         void
+ */
+void IBusCommandRecallMirrorMem2(IBus_t *ibus)
+{
+    const uint8_t recallMem2Cmd[] = {0x78, 0x02, 0x00};
+    IBusSendCommand(
+        ibus,
+        IBUS_DEVICE_SM0,
+        IBUS_DEVICE_GLO,
+        recallMem2Cmd,
+        sizeof(recallMem2Cmd)
+    );
+}
+
+/**
+ * IBusCommandRecallMirrorMem3()
+ *     Description:
+ *        Recall mirror/seat memory 3.
+ *     Params:
+ *         IBus_t *ibus - The pointer to the IBus_t object
+ *     Returns:
+ *         void
+ */
+void IBusCommandRecallMirrorMem3(IBus_t *ibus)
+{
+    const uint8_t recallMem3Cmd[] = {0x78, 0x04, 0x00};
+    IBusSendCommand(
+        ibus,
+        IBUS_DEVICE_SM0,
+        IBUS_DEVICE_GLO,
+        recallMem3Cmd,
+        sizeof(recallMem3Cmd)
+    );
+}

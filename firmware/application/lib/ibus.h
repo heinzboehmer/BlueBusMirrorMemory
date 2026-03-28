@@ -744,6 +744,7 @@ typedef struct IBus_t {
     uint8_t coolantTemperature;
     uint8_t cdChangerFunction;
     uint8_t gearPosition: 4;
+    uint8_t comfortMirrorsStatus: 2;
     uint8_t gtVersion;
     uint8_t ignitionStatus: 4;
     uint8_t lmDimmerVoltage;
@@ -864,4 +865,10 @@ void IBusCommandTELStatusText(IBus_t *, char *, uint8_t);
 void IBusCommandTELTitleText(IBus_t *, uint8_t, uint8_t, uint8_t, char *);
 void IBusCommandGMDoorUnlockTrunk(IBus_t *);
 void IBusCommandVMModeSet(IBus_t *, uint8_t);
+void IBusCommandSetMirrorMem1(IBus_t *);
+void IBusCommandSetMirrorMem2(IBus_t *);
+void IBusCommandSetMirrorMem3(IBus_t *);
+void IBusCommandRecallMirrorMem1(IBus_t *);
+void IBusCommandRecallMirrorMem2(IBus_t *);
+void IBusCommandRecallMirrorMem3(IBus_t *);
 #endif /* IBUS_H */

@@ -1,4 +1,23 @@
-View this project on [CADLAB.io](https://cadlab.io/project/1479).
+# **_NOTE:_**
+This fork adds memory seat/mirror functionality to the BlueBus when used in an E46 with the CD53 radio. 
+
+This overloads the functionality of button `5` on the CD53. Repeatedly pressing will cycle through the following modes:
+
+1. Recall Mirror Memory
+2. Save Mirror Memory
+3. Device selection mode
+
+When in modes (1) or (2), use buttons `1`, `2` or `3` to recall/save memory 1, 2 or 3. Mode (3) works like stock.
+
+Additionally, a handler is added to fix an E46 bug where the passenger mirror won't exactly return to its previous position after auto dipping in reverse.
+
+The handler is scheduled after the transmission is taken out of reverse. When the timer elapses, the handler checks that the transmission is still out of reverse and issues the "Recall Mem X" IBus command (where "X" is the selected memory index). This feature can be configured to recall any mirror memory or turned off entirely in the settings.
+
+Please keep in mind that these features are hacked in and are very much E46 specific. This code should not be merged back to the BlueBus upstream source unless refactored to be cleaner and universal.
+
+# 
+
+View this project on [CADLAB.io](https://cadlab.io/project/1479). 
 
 # BlueBus
 

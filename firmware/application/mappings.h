@@ -117,7 +117,7 @@
 
 #define FIRMWARE_VERSION_MAJOR 1
 #define FIRMWARE_VERSION_MINOR 4
-#define FIRMWARE_VERSION_PATCH 40
+#define FIRMWARE_VERSION_PATCH 42 // To indicate seat memory/mirror memory/low OBC changes
 
 void TrapWait();
 #endif /* IO_MAPPINGS_H */
