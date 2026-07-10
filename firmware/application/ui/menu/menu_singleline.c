@@ -9,6 +9,7 @@
 #include "../../lib/bt/bt_bm83.h"
 #include "../../lib/config.h"
 #include "../../lib/event.h"
+#include "../extended_low_obc.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -29,6 +30,7 @@ static uint8_t SETTINGS_MENU[] = {
     MENU_SINGLELINE_SETTING_IDX_COMFORT_UNLOCK,
     MENU_SINGLELINE_SETTING_IDX_COMFORT_MIRRORS,
     MENU_SINGLELINE_SETTING_IDX_VISUAL_PDC,
+    MENU_SINGLELINE_SETTING_IDX_EXTENDED_LOW_OBC,
     MENU_SINGLELINE_SETTING_IDX_ABOUT,
     MENU_SINGLELINE_SETTING_IDX_PAIRINGS
 };
@@ -49,7 +51,8 @@ static uint8_t SETTINGS_TO_CONFIG_MAP[] = {
     CONFIG_SETTING_COMFORT_LOCKS,
     CONFIG_SETTING_COMFORT_UNLOCK,
     CONFIG_SETTING_COMFORT_MIRRORS,
-    CONFIG_SETTING_VISUAL_PDC
+    CONFIG_SETTING_VISUAL_PDC,
+    CONFIG_SETTING_EXTENDED_LOW_OBC
 };
 
 /**
@@ -224,7 +227,7 @@ void MenuSingleLineOBC(MenuSingleLineContext_t *context)
     }
 
     char text[25] = {0};
-    if (context->uiMode == CONFIG_UI_MID) {
+    if (context->uiMode == CONFIG_UI_MID || context->uiMode == CONFIG_UI_CD53) {
         // MID: 24 chars max
         if (oil != 0) {
             snprintf(text, 25, "C:%d O:%d S:%u", coolant, oil, speed);
@@ -378,6 +381,17 @@ void MenuSingleLineSettingsEditSave(MenuSingleLineContext_t *context)
                 1,
                 MENU_SINGLELINE_DISPLAY_UPDATE_TEMP
             );
+        } else if (context->settingIdx == MENU_SINGLELINE_SETTING_IDX_EXTENDED_LOW_OBC) {
+            ConfigSetSetting(CONFIG_SETTING_EXTENDED_LOW_OBC, context->settingValue);
+            MenuSingleLineSetDisplayText(
+                context,
+                "Saved",
+                1,
+                MENU_SINGLELINE_DISPLAY_UPDATE_TEMP
+            );
+            if (context->settingValue == CONFIG_SETTING_OFF) {
+                EventTriggerCallback(IBUS_EVENT_CLEAR_LOW_OBC, 0);
+            }
         } else if (context->settingIdx == MENU_SINGLELINE_SETTING_IDX_AUDIO_DSP) {
             ConfigSetSetting(CONFIG_SETTING_DSP_INPUT_SRC, context->settingValue);
             MenuSingleLineSetDisplayText(
@@ -933,6 +947,24 @@ void MenuSingleLineSettingsNextSetting(MenuSingleLineContext_t *context, uint8_t
             );
         }
     }
+    if (nextMenu == MENU_SINGLELINE_SETTING_IDX_EXTENDED_LOW_OBC) {
+        context->settingValue = ConfigGetSetting(CONFIG_SETTING_EXTENDED_LOW_OBC);
+        if (context->settingValue == CONFIG_SETTING_ON) {
+            MenuSingleLineSetDisplayText(
+                context,
+                "Extended Low OBC: On",
+                0,
+                MENU_SINGLELINE_DISPLAY_UPDATE_MAIN
+            );
+        } else {
+            MenuSingleLineSetDisplayText(
+                context,
+                "Extended Low OBC: Off",
+                0,
+                MENU_SINGLELINE_DISPLAY_UPDATE_MAIN
+            );
+        }
+    }
     if (nextMenu == MENU_SINGLELINE_SETTING_IDX_ABOUT) {
         char firmwareVersion[6] = {0};
         ConfigGetFirmwareVersionString(firmwareVersion);
@@ -1390,6 +1422,25 @@ void MenuSingleLineSettingsNextValue(MenuSingleLineContext_t *context, uint8_t d
             MenuSingleLineSetDisplayText(
                 context,
                 "Off",
+                0,
+                MENU_SINGLELINE_DISPLAY_UPDATE_MAIN
+            );
+            context->settingValue = CONFIG_SETTING_OFF;
+        }
+    }
+    if (context->settingIdx == MENU_SINGLELINE_SETTING_IDX_EXTENDED_LOW_OBC) {
+        if (context->settingValue == CONFIG_SETTING_OFF) {
+            MenuSingleLineSetDisplayText(
+                context,
+                "Extended Low OBC On",
+                0,
+                MENU_SINGLELINE_DISPLAY_UPDATE_MAIN
+            );
+            context->settingValue = CONFIG_SETTING_ON;
+        } else {
+            MenuSingleLineSetDisplayText(
+                context,
+                "Extended Low OBC Off",
                 0,
                 MENU_SINGLELINE_DISPLAY_UPDATE_MAIN
             );

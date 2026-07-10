@@ -10,6 +10,7 @@
 #include "../lib/bt.h"
 #include "../lib/event.h"
 #include "../lib/timer.h"
+#include "extended_low_obc.h"
 #include "menu/menu_singleline.h"
 
 static CD53Context_t Context;
@@ -29,6 +30,7 @@ void CD53Init(BT_t *bt, IBus_t *ibus)
     Context.radioType = ConfigGetUIMode();
     Context.mediaChangeState = CD53_MEDIA_STATE_OK;
     MenuSingleLineInit(&Context.menuContext, ibus, bt);
+    ExtendedLowObcInit(&Context.extendedLowObcContext, ibus);
     EventRegisterCallback(
         UI_EVENT_MAIN_DISPLAY_UPDATE,
         &CD53UIDisplayUpdateText,
@@ -161,6 +163,7 @@ void CD53Destroy()
         &CD53GTScreenModeSet
     );
     MenuSingleLineDestory();
+    ExtendedLowObcDestroy();
     TimerUnregisterScheduledTask(&CD53TimerDisplay);
     memset(&Context, 0, sizeof(CD53Context_t));
 }
@@ -226,6 +229,19 @@ void CD53UIDisplayUpdateText(void *ctx, uint8_t *data)
 static void CD53HandleUIButtonsNextPrev(CD53Context_t *context, unsigned char direction)
 {
     if (context->mode == CD53_MODE_ACTIVE) {
+        if (ConfigGetSetting(CONFIG_SETTING_EXTENDED_LOW_OBC) == CONFIG_SETTING_ON &&
+            context->extendedLowObcContext.displayMode == EXTENDED_LOW_OBC_DISPLAY_SCROLL
+        ) {
+            ExtendedLowObcMenuScroll(&context->extendedLowObcContext, direction);
+            CD53SetTempDisplayText(
+                context,
+                GetExtendedLowObcPageName(context->extendedLowObcContext.currentPage),
+                EXTENDED_LOW_OBC_CD53_NAME_DISPLAY_TIMEOUT
+            );
+
+            // Return early so that we don't do other work when scrolling the extended low OBC.
+            return;
+        }
         if (direction == 0x00) {
             BTCommandPlaybackTrackNext(context->bt);
         } else {
@@ -663,9 +679,8 @@ void CD53IBusMFLButton(void *ctx, unsigned char *pkt)
 {
     CD53Context_t *context = (CD53Context_t *) ctx;
     if (pkt[IBUS_PKT_DST] == IBUS_DEVICE_TEL) {
-        // 0x00 = R/T Mode RAD
         if (
-            pkt[IBUS_PKT_DB1] == 0x00 &&
+            pkt[IBUS_PKT_DB1] == IBUS_MFL_BTN_EVENT_RAD &&
             context->displayMetadata == CD53_DISPLAY_METADATA_ON
         ) {
             // Push the screen rewrite out to allow the user to input
@@ -678,6 +693,36 @@ void CD53IBusMFLButton(void *ctx, unsigned char *pkt)
                 direction = 0x01;
             }
             CD53HandleUIButtonsNextPrev(context, direction);
+        }
+    }
+
+    // Treat `R/T` button presses as toggles for different modes.
+    if (pkt[IBUS_PKT_SRC] == IBUS_DEVICE_MFL && pkt[IBUS_PKT_DST] == IBUS_DEVICE_LOC) {
+        if (pkt[IBUS_PKT_DB1] == IBUS_MFL_BTN_EVENT_RAD) {
+            // When the extended low OBC feature is enabled, the `R/T` button is
+            // used to toggle the scroll enable for the extended pages.
+            if (ConfigGetSetting(CONFIG_SETTING_EXTENDED_LOW_OBC) == CONFIG_SETTING_ON) {
+                context->extendedLowObcContext.displayMode = EXTENDED_LOW_OBC_DISPLAY_STATIC;
+            }
+            CD53SetMainDisplayText(context, "Bluetooth", 0);
+        } else if (pkt[IBUS_PKT_DB1] == IBUS_MFL_BTN_EVENT_TEL) {
+            // Display the mode we're in permanently to make it clear to the
+            // user that the we're not in the normal Radio mode.
+            if (ConfigGetSetting(CONFIG_SETTING_EXTENDED_LOW_OBC) == CONFIG_SETTING_ON) {
+                context->extendedLowObcContext.displayMode = EXTENDED_LOW_OBC_DISPLAY_SCROLL;
+                ExtendedLowObcRefreshHandler(&context->extendedLowObcContext);
+                // Confusing acronym for Extended OBC (EOBC) is used here
+                // since the full phrase does not fit on the CD53 display
+                // without scrolling.
+                CD53SetMainDisplayText(context, "EOBC Scroll", 0);
+                CD53SetTempDisplayText(
+                    context,
+                    GetExtendedLowObcPageName(context->extendedLowObcContext.currentPage),
+                    EXTENDED_LOW_OBC_CD53_NAME_DISPLAY_TIMEOUT
+                );
+            } else {
+                CD53SetMainDisplayText(context, "Tel Mode", 0);
+            }
         }
     }
 }

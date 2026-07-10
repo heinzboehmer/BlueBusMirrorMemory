@@ -39,6 +39,7 @@
         <itemPath>ui/cd53.h</itemPath>
         <itemPath>ui/cli.h</itemPath>
         <itemPath>ui/mid.h</itemPath>
+        <itemPath>ui/extended_low_obc.h</itemPath>
       </logicalFolder>
       <itemPath>handler.h</itemPath>
       <itemPath>mappings.h</itemPath>
@@ -95,6 +96,7 @@
         <itemPath>ui/cd53.c</itemPath>
         <itemPath>ui/cli.c</itemPath>
         <itemPath>ui/mid.c</itemPath>
+        <itemPath>ui/extended_low_obc.c</itemPath>
       </logicalFolder>
       <itemPath>main.c</itemPath>
       <itemPath>handler.c</itemPath>
@@ -115,7 +117,7 @@
         <platformTool>noID</platformTool>
         <languageToolchain>XC16</languageToolchain>
         <languageToolchainVersion>2.10</languageToolchainVersion>
-        <platform>2</platform>
+        <platform>4</platform>
       </toolsSet>
       <packs>
         <pack name="PIC24F-GA-GB_DFP" vendor="Microchip" version="1.9.336"/>

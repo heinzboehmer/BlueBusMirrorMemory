@@ -16,6 +16,7 @@
 #include "event.h"
 #include "timer.h"
 #include "utils.h"
+#include "../ui/extended_low_obc.h"
 
 static const uint8_t IBUS_SES_NAV_ZOOM_CONSTANT[IBUS_SES_ZOOM_LEVELS] = {
     0x01, // 125 - special case when stationary
@@ -969,6 +970,28 @@ static void IBusHandleVMMessage(IBus_t *ibus, uint8_t *pkt)
     }
 }
 
+/**
+ * IBusHandleDIAMessage()
+ *     Description:
+ *         Handle any messages received from the DIA (Diagnostic)
+ *     Params:
+ *         uint8_t *pkt - The frame received on the IBus
+ *     Returns:
+ *         None
+ */
+static void IBusHandleDIAMessage(IBus_t *ibus, uint8_t *pkt)
+{
+    // This is currently only being used to process messages from Gauge.S, all of
+    // which are addressed to IBUS_DEVICE_JNAV
+    if (pkt[IBUS_PKT_DST] != IBUS_DEVICE_JNAV ||
+        ConfigGetSetting(CONFIG_SETTING_EXTENDED_LOW_OBC) == CONFIG_SETTING_OFF
+    ) {
+        return;
+    }
+
+    EventTriggerCallback(IBUS_EVENT_LOW_OBC_D_BUS_VALUES_UPDATE, pkt);
+}
+
 static uint8_t IBusValidateChecksum(uint8_t *msg)
 {
     uint8_t chk = 0;
@@ -1086,6 +1109,9 @@ void IBusProcess(IBus_t *ibus)
                     }
                     if (srcSystem == IBUS_DEVICE_PDC) {
                         IBusHandlePDCMessage(ibus, pkt);
+                    }
+                    if (srcSystem == IBUS_DEVICE_DIA) {
+                        IBusHandleDIAMessage(ibus, pkt);
                     }
                     if (pkt[IBUS_PKT_DST] == IBUS_DEVICE_TEL) {
                         IBusHandleTELMessage(ibus, pkt);
@@ -2807,16 +2833,42 @@ void IBusCommandIKECheckControlDisplayClear(IBus_t *ibus)
  *        expects a two-digit binary-coded decimal (BCD) pair, with a multiplier
  *        Params:
  *         IBus_t *ibus - The pointer to the IBus_t object
- *         uint8_t number - The decimal number (0-99) to write to the screen
- *         uint8_t mode - One of the IBUS_DATA_IKE_NUMERIC_* mode constants
+ *         uint8_t number - The number to write to the screen in BCD format
+ *         uint8_t format - The format to apply to the number, allowable values follow
+ *                            0x00 - Clear display
+ *                            0x01 - x1 multiplier, append "m"
+ *                            0x03 - x1 multiplier
+ *                            0x05 - x100 multiplier, append "m"
+ *                            0x07 - x100 multiplier
+ *                            0x09 - x10 multiplier, append "m"
+ *                            0x0B - x10 multiplier
  *     Returns:
  *         void
  */
-void IBusCommandIKENumbericDisplayWrite(IBus_t *ibus, uint8_t number, uint8_t mode)
+void IBusCommandIKENumbericDisplayWrite(IBus_t *ibus, uint8_t bcd, uint8_t format)
+{
+    uint8_t msg[3] = {IBUS_CMD_IKE_WRITE_NUMERIC, format, bcd};
+    IBusSendCommand(ibus, IBUS_DEVICE_PDC, IBUS_DEVICE_IKE, msg, sizeof(msg));
+}
+
+/**
+ * IBusCommandIKENumbericDisplayBcdWrite()
+ *     Description:
+ *        Same as IBusCommandIKENumbericDisplayWrite(), but takes a regular number and
+ *        converts to BCD internally.
+ *        Params:
+ *         IBus_t *ibus - The pointer to the IBus_t object
+ *         uint8_t number - The number to write to the screen
+ *         uint8_t format - The format to apply to the number, refer to
+ *                          IBusCommandIKENumbericDisplayWrite() for allowable values
+ *     Returns:
+ *         void
+ */
+void IBusCommandIKENumbericDisplayBcdWrite(IBus_t *ibus, uint8_t number, uint8_t format)
 {
     uint8_t bcd = ((number / 10) << 4) | (number % 10);
-    uint8_t msg[3] = {IBUS_CMD_IKE_WRITE_NUMERIC, mode, bcd};
-    IBusSendCommand(ibus, IBUS_DEVICE_NAVE, IBUS_DEVICE_IKE, msg, sizeof(msg));
+    uint8_t msg[3] = {IBUS_CMD_IKE_WRITE_NUMERIC, format, bcd};
+    IBusSendCommand(ibus, IBUS_DEVICE_PDC, IBUS_DEVICE_IKE, msg, sizeof(msg));
 }
 
 /**
