@@ -9,6 +9,7 @@
 #include "../lib/ibus.h"
 #include "../lib/utils.h"
 #include "../lib/bt/bt_common.h"
+#include "extended_low_obc.h"
 #include "menu/menu_singleline.h"
 
 #define CD53_DISPLAY_METADATA_ON 1
@@ -64,6 +65,7 @@ typedef struct CD53Context_t {
     UtilsAbstractDisplayValue_t mainDisplay;
     UtilsAbstractDisplayValue_t tempDisplay;
     MenuSingleLineContext_t menuContext;
+    ExtendedLowObcContext_t extendedLowObcContext;
 } CD53Context_t;
 void CD53Init(BT_t *, IBus_t *);
 void CD53Destroy();

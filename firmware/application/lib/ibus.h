@@ -278,6 +278,16 @@
 #define IBUS_IKE_OBC_PROPERTY_TEMPERATURE 0x03
 #define IBUS_IKE_OBC_PROPERTY_RANGE 0x06
 #define IBUS_IKE_OBC_PROPERTY_REQUEST_TEXT 0x01
+#define IBUS_IKE_LOW_OBC_FORMAT_CLEAR 0x00
+#define IBUS_IKE_LOW_OBC_FORMAT_X1_M 0x01
+#define IBUS_IKE_LOW_OBC_FORMAT_X1 0x03
+#define IBUS_IKE_LOW_OBC_FORMAT_X100_M 0x05
+#define IBUS_IKE_LOW_OBC_FORMAT_X100 0x07
+#define IBUS_IKE_LOW_OBC_FORMAT_X10_M 0x09
+#define IBUS_IKE_LOW_OBC_FORMAT_X10 0x0B
+#define IBUS_IKE_LOW_OBC_FORMAT_M_BIT_MASK 0x2
+#define IBUS_IKE_LOW_OBC_INVALID_FORMAT 0xFF
+#define IBUS_IKE_LOW_OBC_FORMAT_M_BIT_MASK 0x2
 
 #define IBUS_LCM_LIGHT_STATUS_REQ 0x5A
 #define IBUS_LCM_LIGHT_STATUS_RESP 0x5B
@@ -557,6 +567,8 @@
 #define IBUS_MFL_CMD_BTN_PRESS 0x3B
 #define IBUS_MFL_BTN_EVENT_NEXT_REL 0x21
 #define IBUS_MFL_BTN_EVENT_PREV_REL 0x28
+#define IBUS_MFL_BTN_EVENT_RAD 0x00
+#define IBUS_MFL_BTN_EVENT_TEL 0x40
 #define IBUS_MFL_BTN_EVENT_VOICE_PRESS 0x80
 #define IBUS_MFL_BTN_EVENT_VOICE_HOLD 0x90
 #define IBUS_MFL_BTN_EVENT_VOICE_REL 0xA0
@@ -651,6 +663,9 @@
 #define IBUS_EVENT_GT_SCREEN_BUFFER_WRITE 80
 #define IBUS_EVENT_ZKE_DIAG_ACK 81
 #define IBUS_EVENT_GM_REMOTE_KEY_ENTRY 82
+#define IBUS_EVENT_LOW_OBC_D_BUS_VALUES_UPDATE 83
+#define IBUS_EVENT_CLEAR_LOW_OBC 84
+#define IBUS_EVENT_LOW_OBC_SET_LAST_PAGE 85
 
 // Configuration and protocol definitions
 // Src Len Dest Cmd Data[42 Byte Max] XOR
@@ -829,6 +844,7 @@ void IBusCommandTELIKEDisplayClear(IBus_t *);
 void IBusCommandIKECheckControlDisplayWrite(IBus_t *, char *);
 void IBusCommandIKECheckControlDisplayClear(IBus_t *);
 void IBusCommandIKENumbericDisplayWrite(IBus_t *, uint8_t, uint8_t);
+void IBusCommandIKENumbericDisplayBcdWrite(IBus_t *, uint8_t, uint8_t);
 void IBusCommandIKENumbericDisplayClear(IBus_t *);
 void IBusCommandLMActivateBulbs(IBus_t *, uint8_t, uint8_t, uint8_t);
 void IBusCommandLMGetClusterIndicators(IBus_t *);
