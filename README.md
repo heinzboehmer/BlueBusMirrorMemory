@@ -30,6 +30,12 @@ Refer to `firmware/application/ui/extended_low_obc.h` for both the D Bus relay m
 
 Refer to https://github.com/heinzboehmer/GaugeSConfigs for the appropriate Gauge.S config files.
 
+## Auto D Bus GPS Time
+
+If Gauge.S has a GPS module connected to it, it can send out the GPS time in the same D Bus command as used by the extended low OBC. On startup, the BlueBus will wait to receive a valid time from Gauge.S and then set it.
+
+Enablement of this feature, current timezone and daylight savings offsets are configurable in the settings menu. Note that when adjusting the timezone or DST setting, the clock will reset to 00:00 until a valid time is received from Gauge.S.
+
 ## **_NOTE:_**
 
 Please keep in mind that these features are hacked in and are very much E46 specific. This code should not be merged back to the BlueBus upstream source unless refactored to be cleaner and universal.

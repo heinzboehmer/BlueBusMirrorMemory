@@ -666,6 +666,7 @@
 #define IBUS_EVENT_LOW_OBC_D_BUS_VALUES_UPDATE 83
 #define IBUS_EVENT_CLEAR_LOW_OBC 84
 #define IBUS_EVENT_LOW_OBC_SET_LAST_PAGE 85
+#define IBUS_EVENT_D_BUS_TIME_UNSET 86
 
 // Configuration and protocol definitions
 // Src Len Dest Cmd Data[42 Byte Max] XOR
