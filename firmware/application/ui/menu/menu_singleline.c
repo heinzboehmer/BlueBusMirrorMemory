@@ -31,6 +31,9 @@ static uint8_t SETTINGS_MENU[] = {
     MENU_SINGLELINE_SETTING_IDX_COMFORT_MIRRORS,
     MENU_SINGLELINE_SETTING_IDX_VISUAL_PDC,
     MENU_SINGLELINE_SETTING_IDX_EXTENDED_LOW_OBC,
+    MENU_SINGLELINE_SETTING_IDX_DBUS_AUTO_TIME,
+    MENU_SINGLELINE_SETTING_IDX_DBUS_TIMEZONE_IDX,
+    MENU_SINGLELINE_SETTING_IDX_DBUS_DST,
     MENU_SINGLELINE_SETTING_IDX_ABOUT,
     MENU_SINGLELINE_SETTING_IDX_PAIRINGS
 };
@@ -52,7 +55,10 @@ static uint8_t SETTINGS_TO_CONFIG_MAP[] = {
     CONFIG_SETTING_COMFORT_UNLOCK,
     CONFIG_SETTING_COMFORT_MIRRORS,
     CONFIG_SETTING_VISUAL_PDC,
-    CONFIG_SETTING_EXTENDED_LOW_OBC
+    CONFIG_SETTING_EXTENDED_LOW_OBC,
+    CONFIG_SETTING_DBUS_AUTO_TIME,
+    CONFIG_SETTING_DBUS_TIMEZONE_IDX,
+    CONFIG_SETTING_DBUS_DST
 };
 
 /**
@@ -392,6 +398,39 @@ void MenuSingleLineSettingsEditSave(MenuSingleLineContext_t *context)
             if (context->settingValue == CONFIG_SETTING_OFF) {
                 EventTriggerCallback(IBUS_EVENT_CLEAR_LOW_OBC, 0);
             }
+        } else if (context->settingIdx == MENU_SINGLELINE_SETTING_IDX_DBUS_AUTO_TIME) {
+            ConfigSetSetting(CONFIG_SETTING_DBUS_AUTO_TIME, context->settingValue);
+            MenuSingleLineSetDisplayText(
+                context,
+                "Saved",
+                1,
+                MENU_SINGLELINE_DISPLAY_UPDATE_TEMP
+            );
+            if (context->settingValue == CONFIG_SETTING_ON) {
+                EventTriggerCallback(IBUS_EVENT_D_BUS_TIME_UNSET, 0);
+            }
+        } else if (context->settingIdx == MENU_SINGLELINE_SETTING_IDX_DBUS_TIMEZONE_IDX) {
+            ConfigSetSetting(CONFIG_SETTING_DBUS_TIMEZONE_IDX, context->settingValue);
+            if (ConfigGetSetting(CONFIG_SETTING_DBUS_AUTO_TIME) == CONFIG_SETTING_ON) {
+                EventTriggerCallback(IBUS_EVENT_D_BUS_TIME_UNSET, 0);
+            }
+            MenuSingleLineSetDisplayText(
+                context,
+                "Saved",
+                1,
+                MENU_SINGLELINE_DISPLAY_UPDATE_TEMP
+            );
+        } else if (context->settingIdx == MENU_SINGLELINE_SETTING_IDX_DBUS_DST) {
+            ConfigSetSetting(CONFIG_SETTING_DBUS_DST, context->settingValue);
+            if (ConfigGetSetting(CONFIG_SETTING_DBUS_AUTO_TIME) == CONFIG_SETTING_ON) {
+                EventTriggerCallback(IBUS_EVENT_D_BUS_TIME_UNSET, 0);
+            }
+            MenuSingleLineSetDisplayText(
+                context,
+                "Saved",
+                1,
+                MENU_SINGLELINE_DISPLAY_UPDATE_TEMP
+            );
         } else if (context->settingIdx == MENU_SINGLELINE_SETTING_IDX_AUDIO_DSP) {
             ConfigSetSetting(CONFIG_SETTING_DSP_INPUT_SRC, context->settingValue);
             MenuSingleLineSetDisplayText(
@@ -952,14 +991,67 @@ void MenuSingleLineSettingsNextSetting(MenuSingleLineContext_t *context, uint8_t
         if (context->settingValue == CONFIG_SETTING_ON) {
             MenuSingleLineSetDisplayText(
                 context,
-                "Extended Low OBC: On",
+                "EOBC: On",
                 0,
                 MENU_SINGLELINE_DISPLAY_UPDATE_MAIN
             );
         } else {
             MenuSingleLineSetDisplayText(
                 context,
-                "Extended Low OBC: Off",
+                "EOBC: Off",
+                0,
+                MENU_SINGLELINE_DISPLAY_UPDATE_MAIN
+            );
+        }
+    }
+    if (nextMenu == MENU_SINGLELINE_SETTING_IDX_DBUS_AUTO_TIME) {
+        context->settingValue = ConfigGetSetting(CONFIG_SETTING_DBUS_AUTO_TIME);
+        if (context->settingValue == CONFIG_SETTING_ON) {
+            MenuSingleLineSetDisplayText(
+                context,
+                "DBus Time: On",
+                0,
+                MENU_SINGLELINE_DISPLAY_UPDATE_MAIN
+            );
+        } else {
+            MenuSingleLineSetDisplayText(
+                context,
+                "DBus Time: Off",
+                0,
+                MENU_SINGLELINE_DISPLAY_UPDATE_MAIN
+            );
+        }
+    }
+    if (nextMenu == MENU_SINGLELINE_SETTING_IDX_DBUS_TIMEZONE_IDX) {
+        context->settingValue = ConfigGetSetting(CONFIG_SETTING_DBUS_TIMEZONE_IDX);
+        char timezoneText[30] = {0};
+        snprintf(
+            timezoneText,
+            sizeof(timezoneText),
+            "TZ: %s (%s)",
+            GetDBusTimezone(context->settingValue)->shortName,
+            GetDBusTimezone(context->settingValue)->fullName
+        );
+        MenuSingleLineSetDisplayText(
+            context,
+            timezoneText,
+            0,
+            MENU_SINGLELINE_DISPLAY_UPDATE_MAIN
+        );
+    }
+    if (nextMenu == MENU_SINGLELINE_SETTING_IDX_DBUS_DST) {
+        context->settingValue = ConfigGetSetting(CONFIG_SETTING_DBUS_DST);
+        if (context->settingValue == CONFIG_SETTING_ON) {
+            MenuSingleLineSetDisplayText(
+                context,
+                "DST: On",
+                0,
+                MENU_SINGLELINE_DISPLAY_UPDATE_MAIN
+            );
+        } else {
+            MenuSingleLineSetDisplayText(
+                context,
+                "DST: Off",
                 0,
                 MENU_SINGLELINE_DISPLAY_UPDATE_MAIN
             );
@@ -1432,7 +1524,7 @@ void MenuSingleLineSettingsNextValue(MenuSingleLineContext_t *context, uint8_t d
         if (context->settingValue == CONFIG_SETTING_OFF) {
             MenuSingleLineSetDisplayText(
                 context,
-                "Extended Low OBC On",
+                "EOBC On",
                 0,
                 MENU_SINGLELINE_DISPLAY_UPDATE_MAIN
             );
@@ -1440,7 +1532,62 @@ void MenuSingleLineSettingsNextValue(MenuSingleLineContext_t *context, uint8_t d
         } else {
             MenuSingleLineSetDisplayText(
                 context,
-                "Extended Low OBC Off",
+                "EOBC Off",
+                0,
+                MENU_SINGLELINE_DISPLAY_UPDATE_MAIN
+            );
+            context->settingValue = CONFIG_SETTING_OFF;
+        }
+    }
+    if (context->settingIdx == MENU_SINGLELINE_SETTING_IDX_DBUS_AUTO_TIME) {
+        if (context->settingValue == CONFIG_SETTING_OFF) {
+            MenuSingleLineSetDisplayText(
+                context,
+                "DBUSTime On",
+                0,
+                MENU_SINGLELINE_DISPLAY_UPDATE_MAIN
+            );
+            context->settingValue = CONFIG_SETTING_ON;
+        } else {
+            MenuSingleLineSetDisplayText(
+                context,
+                "DBUSTime Off",
+                0,
+                MENU_SINGLELINE_DISPLAY_UPDATE_MAIN
+            );
+            context->settingValue = CONFIG_SETTING_OFF;
+        }
+    }
+    if (context->settingIdx == MENU_SINGLELINE_SETTING_IDX_DBUS_TIMEZONE_IDX) {
+        context->settingValue = GetNextDBusTimezoneIndex(context->settingValue, direction);
+        char timezoneText[26] = {0};
+        snprintf(
+            timezoneText,
+            sizeof(timezoneText),
+            "%s - %s",
+            GetDBusTimezone(context->settingValue)->shortName,
+            GetDBusTimezone(context->settingValue)->fullName
+        );
+        MenuSingleLineSetDisplayText(
+            context,
+            timezoneText,
+            0,
+            MENU_SINGLELINE_DISPLAY_UPDATE_MAIN
+        );
+    }
+    if (context->settingIdx == MENU_SINGLELINE_SETTING_IDX_DBUS_DST) {
+        if (context->settingValue == CONFIG_SETTING_OFF) {
+            MenuSingleLineSetDisplayText(
+                context,
+                "DST On",
+                0,
+                MENU_SINGLELINE_DISPLAY_UPDATE_MAIN
+            );
+            context->settingValue = CONFIG_SETTING_ON;
+        } else {
+            MenuSingleLineSetDisplayText(
+                context,
+                "DST Off",
                 0,
                 MENU_SINGLELINE_DISPLAY_UPDATE_MAIN
             );

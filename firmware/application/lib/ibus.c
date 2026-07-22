@@ -984,7 +984,8 @@ static void IBusHandleDIAMessage(IBus_t *ibus, uint8_t *pkt)
     // This is currently only being used to process messages from Gauge.S, all of
     // which are addressed to IBUS_DEVICE_JNAV
     if (pkt[IBUS_PKT_DST] != IBUS_DEVICE_JNAV ||
-        ConfigGetSetting(CONFIG_SETTING_EXTENDED_LOW_OBC) == CONFIG_SETTING_OFF
+        (ConfigGetSetting(CONFIG_SETTING_EXTENDED_LOW_OBC) == CONFIG_SETTING_OFF &&
+         ConfigGetSetting(CONFIG_SETTING_DBUS_AUTO_TIME) == CONFIG_SETTING_OFF)
     ) {
         return;
     }
