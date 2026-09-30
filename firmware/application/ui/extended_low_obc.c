@@ -165,6 +165,32 @@ void ExtendedLowObcInit(
     );
 }
 
+void Gear0UpdateHandler(ExtendedLowObcContext_t *context) {
+    // This handler should only ever be called once after scheduling.
+    TimerUnregisterScheduledTask(&Gear0UpdateHandler);
+
+    if (ConfigGetSetting(CONFIG_SETTING_EXTENDED_LOW_OBC) == CONFIG_SETTING_OFF) {
+        return;
+    }
+
+    // Timeout expired, store 0.
+    UpdateExtendedLowObcPage(EXTENDED_LOW_OBC_GEAR_PAGE, 0, BCD_FORMAT_OMIT_M);
+    UpdateExtendedLowObcPage(EXTENDED_LOW_OBC_GEAR_OVERREV_PAGE, 0, BCD_FORMAT_OMIT_M);
+
+    // Refresh low OBC if either of these values are in focus.
+    if (context->currentPage == EXTENDED_LOW_OBC_GEAR_PAGE ||
+        context->currentPage == EXTENDED_LOW_OBC_GEAR_OVERREV_PAGE
+    ) {
+        ExtendedLowObcRefreshHandler(context);
+    }
+
+    // Don't update `context->gearUpdateStatus`, as we still want to know if
+    // the handler has already been scheduled (even if the timeout has expired)
+    // for this most recent `0` gear. The only thing that should update
+    // `context->gearUpdateStatus` is an event where `gear != 0`, otherwise
+    // this handler will continue to get scheduled as long as `gear == 0`.
+}
+
 /**
  * ExtendedLowObcDestroy()
  *     Description:
@@ -179,6 +205,7 @@ void ExtendedLowObcDestroy()
     // Cleanup is done in this roundabout way because we don't have access to
     // the context in this scope.
     TimerUnregisterScheduledTask(&ExtendedLowObcRefreshHandler);
+    TimerUnregisterScheduledTask(&Gear0UpdateHandler);
     EventTriggerCallback(IBUS_EVENT_CLEAR_LOW_OBC, 0);
     EventTriggerCallback(IBUS_EVENT_LOW_OBC_SET_LAST_PAGE, 0);
 
@@ -200,27 +227,15 @@ void ExtendedLowObcDestroy()
     );
 }
 
-void Gear0UpdateHandler(ExtendedLowObcContext_t *context) {
-    if (ConfigGetSetting(CONFIG_SETTING_EXTENDED_LOW_OBC) == CONFIG_SETTING_OFF) {
-        return;
-    }
-    
-    // Timeout expired, store 0.
-    UpdateExtendedLowObcPage(EXTENDED_LOW_OBC_GEAR_PAGE, 0, BCD_FORMAT_OMIT_M);
-    UpdateExtendedLowObcPage(EXTENDED_LOW_OBC_GEAR_OVERREV_PAGE, 0, BCD_FORMAT_OMIT_M);
-
-    // Refresh low OBC if either of these values are in focus.
-    if (context->currentPage == EXTENDED_LOW_OBC_GEAR_PAGE ||
-        context->currentPage == EXTENDED_LOW_OBC_GEAR_OVERREV_PAGE
-    ) {
-        ExtendedLowObcRefreshHandler(context);
+static uint8_t IsIgnitionOff(ExtendedLowObcContext_t *context)
+{
+    if (context == NULL || context->ibus == NULL) {
+        // Assume off on malformed context to avoid kicking off work.
+        return 1;
     }
 
-    // Don't update `context->gearUpdateStatus`, as we still want to know if
-    // the handler has already been scheduled (even if the timeout has expired)
-    // for this most recent `0` gear. The only thing that should update
-    // `context->gearUpdateStatus` is an event where `gear != 0`, otherwise
-    // this handler will continue to get scheduled as long as `gear == 0`.
+    return context->ibus->ignitionStatus == IBUS_IGNITION_OFF ||
+           context->ibus->ignitionStatus == IBUS_IGNITION_KL99;
 }
 
 /**
@@ -254,7 +269,9 @@ void ExtendedLowObcDBusValuesUpdate(void *ctx, uint8_t *pkt)
         }
     }
 
-    if (ConfigGetSetting(CONFIG_SETTING_EXTENDED_LOW_OBC) == CONFIG_SETTING_OFF) {
+    if (ConfigGetSetting(CONFIG_SETTING_EXTENDED_LOW_OBC) == CONFIG_SETTING_OFF ||
+        IsIgnitionOff(context)
+    ) {
         return;
     }
 
@@ -522,6 +539,15 @@ void ExtendedLowObcRefreshHandler(ExtendedLowObcContext_t *context)
 {
     // Unschedule handler in case there was an async refresh.
     TimerUnregisterScheduledTask(&ExtendedLowObcRefreshHandler);
+
+    // If ignition is off, we don't want to do any work or reschedule this handler.
+    if (IsIgnitionOff(context)) {
+        // Do some housekeeping to ensure that the low OBC display is refreshed to the
+        // same page on the next ignition cycle.
+        context->currentDisplayedFormat = IBUS_IKE_LOW_OBC_FORMAT_CLEAR;
+        ExtendedLowObcSetLastPage(context, NULL);
+        return;
+    }
 
     // Display current extended low OBC page
     if (context->currentPage >= EXTENDED_LOW_OBC_LAST_PAGE) {
