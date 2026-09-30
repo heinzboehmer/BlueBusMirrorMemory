@@ -88,6 +88,7 @@ void ExtendedLowObcDBusValuesUpdate(void *, uint8_t *);
 void ClearExtendedLowObc(void *, uint8_t *);
 void ExtendedLowObcSetLastPage(void*, uint8_t*);
 uint8_t Uint16ToLowObcFormattedBcd(uint16_t, uint8_t, LowObcDisplayResult_t *);
+uint8_t Uint16ToHackyLowObcFormattedBcd(uint16_t, uint8_t, LowObcDisplayResult_t *);
 void UpdateExtendedLowObcPage(uint8_t, uint16_t, uint8_t);
 void ExtendedLowObcRefreshHandler(ExtendedLowObcContext_t *);
 void ExtendedLowObcMenuScroll(ExtendedLowObcContext_t *, unsigned char);

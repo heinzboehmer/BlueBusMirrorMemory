@@ -421,6 +421,84 @@ uint8_t Uint16ToLowObcFormattedBcd(uint16_t value, uint8_t appendM, LowObcDispla
     return BCD_FORMAT_TRANSLATE_SUCCESS;
 }
 
+/**
+ * Uint16ToHackyLowObcFormattedBcd()
+ *     Description:
+ *         Translate a uint16_t value into a rounded uint8_t representation of the two (and
+ *         sometimes three!) most significant digits and a multiplier that will make the low
+ *         OBC display the value with the same number of places as input.
+ * 
+ *         Unlike Uint16ToLowObcFormattedBcd(), this does not produce strict BCD. The low
+ *         OBC displays `high_nibble * 10 + low_nibble` and does not reject nibbles greater
+ *         than 9, so a single byte can represent 0-165. This gives one extra digit of
+ *         precision at every multiplier if the three most significant digits of `value`
+ *         are <= 165. This also extends the maximum displayable value from 9900 to 16500.
+ * 
+ *         Note that this is a hack and not how numbers in the low OBC are intended to be
+ *         displayed.
+ *           e.g.
+ *             Uint16ToHackyLowObcFormattedBcd(1639, false, &result) -> true
+ *             result.bcdValue = 0xFE, result.format = IBUS_IKE_LOW_OBC_FORMAT_X10
+ * 
+ *             Uint16ToHackyLowObcFormattedBcd(102, false, &result) -> true
+ *             result.bcdValue = 0xA2, result.format = IBUS_IKE_LOW_OBC_FORMAT_X1
+ *
+ *     Params:
+ *         uint16_t value - The value to be displayed in the low OBC.
+ *         uint8_t append_m - Flag that controls whether or not to append an "M" to data
+ *                         displayed in the low OBC.
+ *         LowObcDisplayResult_t *result - Pointer to the destination result struct where the
+ *                                         calculated value and format multiplier are stored.
+ *     Returns:
+ *         uint8_t - true if translation succeeded, false otherwise.
+ */
+uint8_t Uint16ToHackyLowObcFormattedBcd(uint16_t value, uint8_t appendM, LowObcDisplayResult_t *result)
+{
+    if (value > 16500) {
+        // Highest displayable value is 165 with an x100 multiplier. Caller is
+        // expected to handle this gracefully and not update the display when
+        // this flag is present.
+        return BCD_FORMAT_TRANSLATE_FAILURE;
+    }
+
+    // Greedy pick smallest multiplier to keep as much precision as possible from the
+    // input value. outputValue can be up to 165 (0xFF) thanks to nibble overflow.
+    uint8_t outputValue;
+    if (value <= 165) {
+        outputValue = value;
+        result->format = IBUS_IKE_LOW_OBC_FORMAT_X1;
+    } else if (value + 5 < 1660) {
+        // We add 5 to the input to mimic rounding after the integer division.
+        outputValue = (value + 5) / 10;
+        result->format = IBUS_IKE_LOW_OBC_FORMAT_X10;
+    } else if (value + 50 <= 16550) {
+        // We add 50 to the input to mimic rounding after the integer division.
+        outputValue = (value + 50) / 100;
+        result->format = IBUS_IKE_LOW_OBC_FORMAT_X100;
+    } else {
+        // We should never get here thanks to the check at the beginning of the function,
+        // but no harm in keeping.
+        return BCD_FORMAT_TRANSLATE_FAILURE;
+    }
+
+    // Deal with the "m".
+    if (appendM == BCD_FORMAT_APPEND_M) {
+        result->format &= ~IBUS_IKE_LOW_OBC_FORMAT_M_BIT_MASK;
+    }
+
+    // The display shows (high nibble * 10 + low nibble), so nibbles can go up to 15.
+    // outputValue is guaranteed to be <= 165 by the conditionals above. For 160-165 the
+    // tens place would be 16, so cap it at 15 and let the ones place carry 10-15.
+    uint8_t tensPlace = outputValue / 10;
+    if (tensPlace > 15) {
+        tensPlace = 15;
+    }
+    uint8_t onesPlace = outputValue - (tensPlace * 10);
+    result->bcdValue = (tensPlace << 4) | onesPlace;
+
+    return BCD_FORMAT_TRANSLATE_SUCCESS;
+}
+
 void UpdateExtendedLowObcPage(uint8_t page, uint16_t value, uint8_t appendM)
 {
     if (page >= EXTENDED_LOW_OBC_LAST_PAGE) {
@@ -429,7 +507,12 @@ void UpdateExtendedLowObcPage(uint8_t page, uint16_t value, uint8_t appendM)
     }
 
     LowObcDisplayResult_t displayResult;
-    Uint16ToLowObcFormattedBcd(value, appendM, &displayResult);
+    uint8_t translateStatus = Uint16ToHackyLowObcFormattedBcd(value, appendM, &displayResult);
+
+    if (translateStatus != BCD_FORMAT_TRANSLATE_SUCCESS) {
+        LogError("Unable to format %u for extended low OBC page 0x%X", value, page);
+        return;
+    }
 
     EXTENDED_LOW_OBC_PAGES_BCD_VALUES_MAP[page] = displayResult.bcdValue;
     EXTENDED_LOW_OBC_PAGES_FORMATS_MAP[page] = displayResult.format;
